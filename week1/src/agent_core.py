@@ -55,7 +55,7 @@ class YandexGPTClient:
 
         self.iam_token = iam_token
         self.folder_id = folder_id
-        self.model_uri = f"gpt://{folder_id}/latest"
+        self.model_uri = f"gpt://{folder_id}/yandexgpt/latest"
         self.api_url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
 
         logger.info(f"Клиент инициализирован. Folder ID: {folder_id}")
@@ -155,8 +155,6 @@ class YandexGPTClient:
             raise
         except requests.exceptions.RequestException as e:
             logger.error(f"Ошибка запроса: {e}")
-            if hasattr(e, 'response') and e.response is not None:
-                logger.error(f"Тело ответа: {e.response.text}")
             raise
         except ValueError as e:
             logger.error(f"Ошибка парсинга ответа: {e}")
