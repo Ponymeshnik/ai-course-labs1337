@@ -22,14 +22,13 @@
 ---
 ## 3. Ход работы
 ### 3.1. Настройка окружения
-[Скриншот терминала с версией Python и активным venv]
+![alt text](image.png)
 ```bash
 ## Команды установки
 python --version
 pip install -r requirements.txt
 ```
 ### 3.2. Создание репозитория
-[Скриншот GitHub-репозитория]
 - URL репозитория: `https://github.com/USERNAME/ai-course-labs`
 - Текущая ветка: `week1`
 ### 3.3. Получение API-ключей
