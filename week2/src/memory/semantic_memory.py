@@ -55,7 +55,7 @@ class SemanticMemory:
         )
 
         # Мультиязычная embedding модель (поддержка русского)
-        self.embedding_function = embedding_functions.HuggingFaceEmbeddingFunction(
+        self.embedding_function = embedding_functions.SentenceTransformerEmbeddingFunction(
             model_name=f"sentence-transformers/{embedding_model}"
         )
 

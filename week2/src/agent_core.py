@@ -17,8 +17,7 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 import time
 
-from langchain.agents import create_agent
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.tools import BaseTool
 
 # Локальные импорты
@@ -136,13 +135,14 @@ class AIAgent:
             self.guardrails = InputGuardrails()
             logger.info("Guardrails активированы")
 
-        # Инициализация LangChain-агента
+        # Инициализация LangChain-агента (системный промпт)
         self.agent = self._init_agent()
         logger.info("Агент готов к работе")
 
         # Статистика
         self.request_count = 0
         self.total_tokens = 0
+        self._last_result = {}
 
     def _init_llm(self):
         """
@@ -188,22 +188,36 @@ class AIAgent:
 
     def _init_agent(self):
         """
-        Инициализация LangChain-агента (API langchain 1.2.x).
+        Инициализация системного промпта для ReAct-агента.
 
         Returns:
-            CompiledStateGraph: Настроенный агент
+            str: Системный промпт
         """
-        system_prompt = SystemMessage(
-            content="Ты — технический ассистент. "
-                    "Используй доступные инструменты для выполнения запросов. "
-                    "Отвечай подробно и по делу."
-        )
+        # Формируем описание инструментов
+        tools_desc = "\n".join([
+            f"- {tool.name}: {tool.description}"
+            for tool in self.tools
+        ])
+        tools_names = ", ".join([tool.name for tool in self.tools])
 
-        return create_agent(
-            model=self.llm,
-            tools=self.tools,
-            system_prompt=system_prompt.content,
-        )
+        return (
+            "Ты — технический ассистент. У тебя есть доступ к следующим инструментам:\n"
+            f"{tools_desc}\n\n"
+            "Для выполнения задач используй формат ReAct:\n"
+            "Thought: <рассуждение>\n"
+            "Action: <имя инструмента> — один из: {tools_names}\n"
+            "Action Input: <входные данные инструмента>\n"
+            "Observation: <результат инструмента>\n"
+            "... (можно повторить N раз) ...\n"
+            "Thought: <рассуждение>\n"
+            "Final Answer: <финальный ответ пользователю>\n\n"
+            "Правила:\n"
+            "1. Всегда начинай с Thought\n"
+            "2. Action должен быть ровно один за раз\n"
+            "3. Используй только доступные инструменты\n"
+            "4. Когда готов ответить — напиши Final Answer\n"
+            "5. Отвечай подробно и по делу"
+        ).format(tools_names=tools_names)
 
     def run(self, query: str, session_id: Optional[str] = None) -> AgentResponse:
         """
@@ -218,6 +232,7 @@ class AIAgent:
         """
         start_time = time.time()
         session_id = session_id or f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        self._last_result = {}
 
         # Проверка безопасности входа
         if self.guardrails:
@@ -234,14 +249,9 @@ class AIAgent:
                 )
 
         try:
-            # Выполнение запроса
+            # Выполнение запроса через ReAct-цикл
             logger.info(f"Обработка запроса: {query[:100]}...")
-            result = self.agent.invoke(
-                {"messages": [HumanMessage(content=query)]}
-            )
-
-            # Извлечение ответа
-            answer = self._extract_answer(result)
+            answer, steps = self._react_loop(query)
 
             # Сохранение в память
             if self.working_memory:
@@ -262,10 +272,12 @@ class AIAgent:
             tokens_used = self._estimate_tokens(query, answer)
             self.total_tokens += tokens_used
 
+            self._last_result = {"intermediate_steps": steps}
+
             response = AgentResponse(
                 success=True,
                 answer=answer,
-                steps=self._extract_steps(),
+                steps=steps,
                 duration_ms=duration_ms,
                 tokens_used=tokens_used
             )
@@ -284,24 +296,104 @@ class AIAgent:
                 error=str(e)
             )
 
-    def _extract_answer(self, result: dict) -> str:
-        """Извлечение текстового ответа из результата агента."""
-        messages = result.get("messages", [])
-        # Берём последнее сообщение ассистента
-        for msg in reversed(messages):
-            if hasattr(msg, "content") and msg.content:
-                return msg.content
-        return str(result)
-
-    def _extract_steps(self) -> List[Dict]:
+    def _react_loop(self, query: str) -> Tuple[str, List[Dict]]:
         """
-        Извлечение шагов выполнения из истории агента.
+        Ручной ReAct-цикл для моделей без bind_tools.
+
+        Args:
+            query: Запрос пользователя
 
         Returns:
-            List[Dict]: Список шагов ReAct
+            Tuple[str, List[Dict]]: (финальный_ответ, шаги)
         """
-        # В production: парсинг логов LangChain
-        return []
+        import re
+
+        system_prompt = self.agent  # self.agent теперь содержит системный промпт
+        messages = [SystemMessage(content=system_prompt)]
+        messages.append(HumanMessage(content=query))
+
+        steps = []
+        iteration = 0
+
+        while iteration < self.config.max_iterations:
+            iteration += 1
+
+            # Генерация ответа
+            full_prompt = "\n".join([
+                msg.content if hasattr(msg, 'content') else str(msg)
+                for msg in messages
+            ])
+
+            if self.config.verbose:
+                logger.info(f"--- Итерация {iteration} ---")
+
+            response = self.llm.invoke(full_prompt)
+            response_text = response if isinstance(response, str) else str(response)
+
+            if self.config.verbose:
+                logger.debug(f"LLM ответ:\n{response_text[:500]}")
+
+            # Поиск Action
+            action_match = re.search(
+                r"Action:\s*([\w\s\-]+)", response_text, re.IGNORECASE
+            )
+            action_input_match = re.search(
+                r"Action Input:\s*(.+)", response_text, re.IGNORECASE
+            )
+            final_answer_match = re.search(
+                r"Final Answer:\s*(.+)", response_text, re.IGNORECASE | re.DOTALL
+            )
+
+            # Если найден Final Answer — завершаем
+            if final_answer_match and not action_match:
+                return final_answer_match.group(1).strip(), steps
+
+            # Если найден Action — выполняем инструмент
+            if action_match and action_input_match:
+                action_name = action_match.group(1).strip()
+                action_input = action_input_match.group(1).strip()
+
+                # Поиск инструмента по имени
+                tool_map = {tool.name.lower(): tool for tool in self.tools}
+                tool = tool_map.get(action_name.lower())
+
+                if tool:
+                    try:
+                        # Выполнение инструмента
+                        observation = tool.invoke(action_input)
+                        obs_text = observation if isinstance(observation, str) else str(observation)
+
+                        steps.append({
+                            "step": iteration,
+                            "tool": action_name,
+                            "input": action_input,
+                            "output": obs_text[:500]
+                        })
+
+                        # Добавляем в историю
+                        messages.append(AIMessage(content=response_text))
+                        messages.append(HumanMessage(content=f"Observation: {obs_text}"))
+
+                        if self.config.verbose:
+                            logger.info(f"Инструмент '{action_name}' -> {obs_text[:200]}")
+
+                    except Exception as e:
+                        error_msg = f"Ошибка инструмента '{action_name}': {e}"
+                        logger.error(error_msg)
+                        messages.append(AIMessage(content=response_text))
+                        messages.append(HumanMessage(content=f"Observation: {error_msg}"))
+                else:
+                    # Инструмент не найден
+                    available = ", ".join([t.name for t in self.tools])
+                    error_msg = f"Инструмент '{action_name}' не найден. Доступные: {available}"
+                    messages.append(AIMessage(content=response_text))
+                    messages.append(HumanMessage(content=f"Observation: {error_msg}"))
+            else:
+                # Нет Action или Final Answer — завершаем
+                return response_text.strip(), steps
+
+        # Превышено количество итераций
+        return "Превышено максимальное количество итераций.", steps
 
     def _estimate_tokens(self, input_text: str, output_text: str) -> int:
         """
