@@ -7,3 +7,4 @@ langchain-community
 langchain-core
 bs4
 chromadb
+sentence_transformers
