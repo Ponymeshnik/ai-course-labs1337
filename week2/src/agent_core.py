@@ -203,9 +203,10 @@ class AIAgent:
         return (
             "Ты — технический ассистент. У тебя есть доступ к следующим инструментам:\n"
             f"{tools_desc}\n\n"
+            f"Доступные инструменты: {tools_names}\n\n"
             "Для выполнения задач используй формат ReAct:\n"
             "Thought: <рассуждение>\n"
-            "Action: <имя инструмента> — один из: {tools_names}\n"
+            "Action: <имя инструмента>\n"
             "Action Input: <входные данные инструмента>\n"
             "Observation: <результат инструмента>\n"
             "... (можно повторить N раз) ...\n"
@@ -335,13 +336,15 @@ class AIAgent:
 
             # Поиск Action
             action_match = re.search(
-                r"Action:\s*([\w\s\-]+)", response_text, re.IGNORECASE
+                r"^Action:\s*([^\r\n]+)$", response_text, re.IGNORECASE | re.MULTILINE
             )
             action_input_match = re.search(
-                r"Action Input:\s*(.+)", response_text, re.IGNORECASE
+                r"^Action Input:\s*(.+)$", response_text, re.IGNORECASE | re.MULTILINE
             )
             final_answer_match = re.search(
-                r"Final Answer:\s*(.+)", response_text, re.IGNORECASE | re.DOTALL
+                r"^Final Answer:\s*(.+)$",
+                response_text,
+                re.IGNORECASE | re.MULTILINE | re.DOTALL,
             )
 
             # Если найден Final Answer — завершаем
