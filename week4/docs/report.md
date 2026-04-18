@@ -72,7 +72,8 @@ WEBHOOK_SECRET=секретный_ключ
 ```
 
 ## 4. Результаты
-
+![alt text]({4AC49C5D-45FB-4B1D-B6CB-9915D985E3AB}.png)
+![alt text]({F173E180-955B-4AB8-9B49-2BDCFD21D52D}.png)
 - [x] n8n запущен и доступен
 - [x] Workflow импортирован и активирован
 - [x] Webhook принимает заявки
