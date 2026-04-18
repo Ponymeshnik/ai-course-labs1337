@@ -224,6 +224,7 @@ if __name__ == "__main__":
     if result["success"]:
         print("✅ Заявка отправлена успешно")
         print(f"Статус код: {result['status_code']}")
+        print(f"Ответ: {result['response']}")
     else:
         print(f"❌ Ошибка: {result['error']}")
     print("=" * 80)

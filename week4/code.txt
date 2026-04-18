@@ -1,0 +1,164 @@
+// Листинг 3.1: Шаблон специализированного workflow
+{
+ "name": "Специализированный workflow для [СПЕЦИАЛЬНОСТЬ]",
+ "description": "[Описание workflow и его назначения]",
+ "author": "[ВАША ФАМИЛИЯ]",
+ "diploma_topic": "[ТЕМА ДИПЛОМНОЙ РАБОТЫ]",
+ "nodes": [
+ {
+ "parameters": {
+ "httpMethod": "POST",
+ "path": "specialty-webhook",
+ "responseMode": "lastNode"
+ },
+ "name": "Trigger",
+ "type": "n8n-nodes-base.webhook",
+ "typeVersion": 1,
+ "position": [250, 300]
+ },
+ {
+ "parameters": {
+ "method": "POST",
+ "url": "https://llm.api.cloud.yandex.net/foundationModels/v1/completion",
+ "sendBody": true,
+ "bodyParameters": {
+ "parameters": [
+ {
+ "name": "modelUri",
+ "value": "gpt://{{ $env.YANDEX_FOLDER_ID }}/yandexGPT/latest"
+ },
+ {
+ "name": "messages",
+ "value": "=[{\"role\":\"system\",\"text\":\"[ВАШ ПРОМПТ ДЛЯ СПЕЦИАЛЬНОСТИ]\"},{\"role\":\"user\",\"text\":\"{{
+$json.body.data }}\"}]"
+ }
+ ]
+ }
+ },
+ "name": "AI Processor",
+ "type": "n8n-nodes-base.httpRequest",
+ "typeVersion": 4,
+ "position": [450, 300]
+ },
+ {
+ "parameters": {},
+ "name": "Output Action",
+ "type": "n8n-nodes-base.httpRequest",
+ "typeVersion": 4,
+ "position": [650, 300]
+ }
+ ],
+ "connections": {
+ "Trigger": {
+ "main": [[{"node": "AI Processor", "type": "main", "index": 0}]]
+ },
+ "AI Processor": {
+ "main": [[{"node": "Output Action", "type": "main", "index": 0}]]
+ }
+ }
+}
+
+
+// Листинг 3.2: Пример для информационной безопасности
+
+{
+ "name": "Анализ инцидентов безопасности",
+ "description": "Автоматическая классификация и маршрутизация инцидентов ИБ",
+ "author": "[Ваша фамилия]",
+ "specialty": "Информационная безопасность",
+ "nodes": [
+ {
+ "parameters": {
+ "httpMethod": "POST",
+ "path": "security-incident",
+ "responseMode": "lastNode"
+ },
+ "name": "SIEM Webhook",
+ "type": "n8n-nodes-base.webhook",
+ "typeVersion": 1,
+ "position": [250, 300]
+ },
+ {
+ "parameters": {
+ "method": "POST",
+ "url": "https://llm.api.cloud.yandex.net/foundationModels/v1/completion",
+ "sendBody": true,
+ "bodyParameters": {
+ "parameters": [
+ {
+ "name": "modelUri",
+ "value": "gpt://{{ $env.YANDEX_FOLDER_ID }}/yandexGPT/latest"
+ },
+ {
+ "name": "completionOptions.temperature",
+ "value": "0.2"
+ },
+ {
+ "name": "messages",
+ "value": "=[{\"role\":\"system\",\"text\":\"Классифицируй инцидент безопасности по уровню критичности: critical, high,
+medium, low. Также определи тип атаки. Ответь в формате JSON: {\\\"level\\\": \\\"...\\\", \\\"type\\\": \\\"...\\\",
+\\\"recommendation\\\": \\\"...\\\"}\"},{\"role\":\"user\",\"text\":\"{{ $json.body.log_entry }}\"}]"
+ }
+ ]
+ }
+ },
+ "name": "Security AI Classifier",
+ "type": "n8n-nodes-base.httpRequest",
+ "typeVersion": 4,
+ "position": [450, 300]
+ },
+ {
+ "parameters": {
+ "conditions": {
+ "string": [
+ {
+ "value1": "{{ JSON.parse($json.result.alternatives[0].message.text).level }}",
+ "operation": "equals",
+ "value2": "critical"
+ }
+ ]
+ }
+ },
+ "name": "IF Critical",
+ "type": "n8n-nodes-base.if",
+ "typeVersion": 1,
+ "position": [650, 300]
+ },
+ {
+ "parameters": {
+ "method": "POST",
+ "url": "https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+ "sendBody": true,
+ "bodyParameters": {
+ "parameters": [
+ {
+ "name": "chat_id",
+ "value": "{{ $env.SOC_CHAT_ID }}"
+ },
+ {
+ "name": "text",
+ "value": "🚨 КРИТИЧЕСКИЙ ИНЦИДЕНТ ИБ\n\nТип: {{ JSON.parse($json.result.alternatives[0].message.text).type
+}}\n\nРекомендация: {{ JSON.parse($json.result.alternatives[0].message.text).recommendation }}\n\nЛог: {{ $json.body.log_entry }}"
+ }
+ ]
+ }
+ },
+ "name": "SOC Alert",
+ "type": "n8n-nodes-base.httpRequest",
+ "typeVersion": 4,
+ "position": [850, 300]
+ }
+ ],
+ "connections": {
+ "SIEM Webhook": {
+ "main": [[{"node": "Security AI Classifier", "type": "main", "index": 0}]]
+ },
+ "Security AI Classifier": {
+ "main": [[{"node": "IF Critical", "type": "main", "index": 0}]]
+ },
+ "IF Critical": {
+ "main": [[{"node": "SOC Alert", "type": "main", "index": 0}]]
+ }
+ }
+
+
