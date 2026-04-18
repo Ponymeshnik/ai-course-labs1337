@@ -1,0 +1,57 @@
+{
+  "name": "Специализированный workflow для [СПЕЦИАЛЬНОСТЬ]",
+  "description": "[Описание workflow и его назначения]",
+  "author": "[ВАША ФАМИЛИЯ]",
+  "diploma_topic": "[ТЕМА ДИПЛОМНОЙ РАБОТЫ]",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "specialty-webhook",
+        "responseMode": "lastNode"
+      },
+      "name": "Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://llm.api.cloud.yandex.net/foundationModels/v1/completion",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "modelUri",
+              "value": "gpt://{{ $env.YANDEX_FOLDER_ID }}/yandexGPT/latest"
+            },
+            {
+              "name": "messages",
+              "value": "=[{\"role\":\"system\",\"text\":\"[ВАШ ПРОМПТ ДЛЯ СПЕЦИАЛЬНОСТИ]\"},{\"role\":\"user\",\"text\":\"{{ $json.body.data }}\"}]"
+            }
+          ]
+        }
+      },
+      "name": "AI Processor",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {},
+      "name": "Output Action",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Trigger": {
+      "main": [[{"node": "AI Processor", "type": "main", "index": 0}]]
+    },
+    "AI Processor": {
+      "main": [[{"node": "Output Action", "type": "main", "index": 0}]]
+    }
+  }
+}
