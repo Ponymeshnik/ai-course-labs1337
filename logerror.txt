@@ -1,0 +1,58 @@
+(.venv) (base) PS C:\Users\Kiruma Souchi\Desktop\8semestr\AI\laboratornie\ai-course-labs1337\week6> pip install -r requirements.txt
+Collecting langchain<0.2.0,>=0.1.0 (from -r requirements.txt (line 5))
+  Using cached langchain-0.1.20-py3-none-any.whl.metadata (13 kB)
+Collecting langchain-community<0.1.0,>=0.0.10 (from -r requirements.txt (line 6))
+  Using cached langchain_community-0.0.38-py3-none-any.whl.metadata (8.7 kB)
+Requirement already satisfied: torch<3.0.0,>=2.0.0 in C:\Users\Kiruma Souchi\Desktop\8semestr\AI\laboratornie\ai-course-labs1337\week5\.venv\Lib\site-packages (from -r requirements.txt (line 7)) (2.11.0)
+Collecting transformers<5.0.0,>=4.35.0 (from -r requirements.txt (line 8))
+  Downloading transformers-4.57.6-py3-none-any.whl.metadata (43 kB)
+Requirement already satisfied: pydantic<3.0.0,>=2.0.0 in C:\Users\Kiruma Souchi\Desktop\8semestr\AI\laboratornie\ai-course-labs1337\week5\.venv\Lib\site-packages (from -r requirements.txt (line 10)) (2.13.3)
+Collecting pyparsing<4.0.0,>=3.1.0 (from -r requirements.txt (line 11))
+  Downloading pyparsing-3.3.2-py3-none-any.whl.metadata (5.8 kB)
+Requirement already satisfied: python-dotenv<2.0.0,>=1.0.0 in C:\Users\Kiruma Souchi\Desktop\8semestr\AI\laboratornie\ai-course-labs1337\week5\.venv\Lib\site-packages (from -r requirements.txt (line 13)) (1.2.2)
+Requirement already satisfied: requests<3.0.0,>=2.31.0 in C:\Users\Kiruma Souchi\Desktop\8semestr\AI\laboratornie\ai-course-labs1337\week5\.venv\Lib\site-packages (from -r requirements.txt (line 14)) (2.33.1)
+Collecting numpy<2.0.0,>=1.24.0 (from -r requirements.txt (line 15))
+  Using cached numpy-1.26.4.tar.gz (15.8 MB)
+  Installing build dependencies ... done
+  Getting requirements to build wheel ... done
+  Installing backend dependencies ... done
+  Preparing metadata (pyproject.toml) ... error
+  error: subprocess-exited-with-error
+
+  × Preparing metadata (pyproject.toml) did not run successfully.
+  │ exit code: 1
+  ╰─> [21 lines of output]
+      + C:\Users\Kiruma Souchi\Desktop\8semestr\AI\laboratornie\ai-course-labs1337\week5\.venv\Scripts\python.exe C:\Users\Kiruma Souchi\AppData\Local\Temp\pip-install-4hx13qrb\numpy_b5bb3171a6634721ada0153f11c059ec\vendored-meson\meson\meson.py setup C:\Users\Kiruma Souchi\AppData\Local\Temp\pip-install-4hx13qrb\numpy_b5bb3171a6634721ada0153f11c059ec C:\Users\Kiruma Souchi\AppData\Local\Temp\pip-install-4hx13qrb\numpy_b5bb3171a6634721ada0153f11c059ec\.mesonpy-2wmrngdt -Dbuildtype=release -Db_ndebug=if-release -Db_vscrt=md --native-file=C:\Users\Kiruma Souchi\AppData\Local\Temp\pip-install-4hx13qrb\numpy_b5bb3171a6634721ada0153f11c059ec\.mesonpy-2wmrngdt\meson-python-native-file.ini
+      The Meson build system
+      Version: 1.2.99
+      Source dir: C:\Users\Kiruma Souchi\AppData\Local\Temp\pip-install-4hx13qrb\numpy_b5bb3171a6634721ada0153f11c059ec
+      Build dir: C:\Users\Kiruma Souchi\AppData\Local\Temp\pip-install-4hx13qrb\numpy_b5bb3171a6634721ada0153f11c059ec\.mesonpy-2wmrngdt
+      Build type: native build
+      Project name: NumPy
+      Project version: 1.26.4
+      WARNING: Failed to activate VS environment: Could not parse vswhere.exe output
+
+      ..\meson.build:1:0: ERROR: Unknown compiler(s): [['icl'], ['cl'], ['cc'], ['gcc'], ['clang'], ['clang-cl'], ['pgcc']]
+      The following exception(s) were encountered:
+      Running `icl ""` gave "[WinError 2] Не удается найти указанный файл"
+      Running `cl /?` gave "[WinError 2] Не удается найти указанный файл"
+      Running `cc --version` gave "[WinError 2] Не удается найти указанный файл"
+      Running `gcc --version` gave "[WinError 2] Не удается найти указанный файл"
+      Running `clang --version` gave "[WinError 2] Не удается найти указанный файл"
+      Running `clang-cl /?` gave "[WinError 2] Не удается найти указанный файл"
+      Running `pgcc --version` gave "[WinError 2] Не удается найти указанный файл"
+
+      A full log can be found at C:\Users\Kiruma Souchi\AppData\Local\Temp\pip-install-4hx13qrb\numpy_b5bb3171a6634721ada0153f11c059ec\.mesonpy-2wmrngdt\meson-logs\meson-log.txt
+      [end of output]
+
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+
+[notice] A new release of pip is available: 26.0.1 -> 26.1.1
+[notice] To update, run: python.exe -m pip install --upgrade pip
+error: metadata-generation-failed
+
+× Encountered error while generating package metadata.
+╰─> numpy
+
+note: This is an issue with the package mentioned above, not pip.
+hint: See above for details.
